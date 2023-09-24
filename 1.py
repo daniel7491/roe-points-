@@ -8,9 +8,7 @@ import os
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # Define the folder path containing your images
-
-# Define the folder path containing your images
-x = input("input the path to the images: ")
+x = input("Input the path to the images: ")
 folder_path = x  # Remove the rf and use x directly
 
 # Create an empty list to store the data for all images
@@ -21,7 +19,6 @@ columns = ['Name', 'Contribution', 'Ranking', 'Season points', 'Demolition Value
 
 # Regular expression patterns to match key-value pairs
 patterns = {
-    'Name': r'\[21X\] \* (.+?) \*',
     'Contribution': r'Contribution (\d+(?:,\d+)*)',
     'Ranking': r'Ranking (\d+(?:,\d+)*)',
     'Season points': r'Season points (\d+(?:,\d+)*)',
@@ -29,7 +26,6 @@ patterns = {
     'Feat in Eden': r'Feat in Eden (\d+(?:,\d+)*)',
     'Occupy Enemy Territory': r'Occupy Enemy Territory (\d+(?:,\d+)*)',
 }
-
 
 # Iterate through all files in the folder
 for filename in os.listdir(folder_path):
@@ -41,6 +37,13 @@ for filename in os.listdir(folder_path):
         # Extract text from the image
         extracted_text = pytesseract.image_to_string(image)
 
+        # Find the name (text following [21X])
+        name_match = re.search(r'\[21X\] ([^\n]+)', extracted_text)
+        if name_match:
+            name = name_match.group(1).strip()
+        else:
+            name = None
+
         # Initialize a dictionary to store the extracted data for this image
         data_dict = {col: None for col in columns}
 
@@ -48,10 +51,10 @@ for filename in os.listdir(folder_path):
         for key, pattern in patterns.items():
             match = re.search(pattern, extracted_text)
             if match:
-                if key == 'Name':
-                    data_dict[key] = match.group(1)  # Name doesn't need formatting
-                else:
-                    data_dict[key] = match.group(1).replace(',', '')  # Remove commas from numbers
+                data_dict[key] = match.group(1).replace(',', '')  # Remove commas from numbers
+
+        # Set the 'Name' field
+        data_dict['Name'] = name
 
         # Append the data for this image to the list
         all_data.append(data_dict)
@@ -62,3 +65,5 @@ df = pd.DataFrame(all_data)
 # Export to Excel
 excel_file = 'all_images_data1.xlsx'
 df.to_excel(excel_file, index=False)
+
+print("Data extraction completed and saved to 'all_images_data1.xlsx'.")
